@@ -1,0 +1,21 @@
+---
+name: tricipta-cross-repo-plan-verification
+description: "Verify a proposed multi-repo Tricipta bugfix/implementation plan (e.g. \"is this the right approach?\") by grounding every file:line claim against real source via parallel per-repo scouts before endorsing it. Use when asked to review, bless, or sanity-check a fix plan spanning 2+ Tricipta repos (asset-web, asset-api, plot-api, uiux-asset), especially one with specific function names/line numbers already attached."
+---
+
+## When to use
+User pastes a numbered fix plan (often from another session/tool) touching 2+ Tricipta repos and asks "is this the right approach?" or "is this correct?". Treat every file:line/function-name claim as unverified until checked against real source — plans like this are frequently partially right: one step is the real root cause, another targets a plausible-sounding but factually wrong mechanism.
+
+## Procedure
+1. **Check memory/skills first.** `recall`/`reflect` for prior investigation of the same symptom — a prior session may have already stored the (possibly incomplete or since-superseded) root-cause theory. Read matching skills (e.g. `tricipta-marker-value-defect-debug`, `tricipta-producing-days-contract`, `tricipta-insight-debugging`). Note anywhere the new plan's claims diverge from stored theory — that divergence is exactly what needs verification, not automatic trust in either direction.
+2. **Dispatch one scout per repo, in one `tasks[]` batch.** Give each scout: the overall symptom/mechanism as shared `context`, and a numbered list of specific claims to verify (function exists at line X, does Y unconditionally/conditionally, is called by Z, etc.). Require CONFIRMED / PARTIALLY CONFIRMED / CONTRADICTED per claim with exact quoted source and file:line — explicitly forbid "the plan author was probably right" softening.
+3. **Read the actual proof, not just the summary.** Scout previews/summaries can compress away the one line that matters (e.g. a SQL query's `PARTITION BY` clause revealing *why* an adjacent filter is wrong, not just *that* it's unconditional). Pull the full artifact (`agent://<id>`) or ask a targeted follow-up via `hub send` when a claim is safety-critical.
+4. **When two scouts' (or a scout's and your own) conclusions conflict on a load-bearing question, resolve it yourself with one direct, targeted primary-source read — don't accept the more cautious/negative answer by default.** A scout can correctly observe a narrow local fact ("function X never reads field Y directly") and still draw a wrong global conclusion ("therefore fixing Y won't help") by missing that an earlier step in the same call chain already consumes Y to materialize what X reads. Verify the dependency graph directly (e.g. grep the formula/schema declaration) rather than more subagent ping-pong once you can settle it with a single read.
+5. **Render a per-step verdict, not a blanket yes/no.** Typical shape: some steps CONFIRMED (real root cause, cite the evidence chain), one step WRONG MECHANISM (cite the contradicting code, explain what actually happens instead), some steps CONFIRMED-NECESSARY-BUT-UNRELATED (e.g. cache invalidation, frontend fallback fix — real bugs, just not the one the user asked about). Recommend a sequencing (ship the confirmed/low-risk fix first, verify empirically, defer the disputed step pending a live reproduction) rather than green-lighting the whole plan or rejecting it wholesale.
+6. **Correct any stored memory that fed the plan's disproven premise.** If a `recall`ed memory stated the now-contradicted mechanism, `memory_edit update`/`invalidate` it with the corrected chain — don't leave a wrong causal claim in long-term memory to mislead the next session into re-proposing the same wrong fix.
+
+## Anti-patterns
+- Accepting a plan's file:line citations at face value because they look specific and plausible.
+- Treating "no subagent found a problem with step N" as confirmation of step N when no subagent was actually asked the decisive question.
+- Blessing an entire plan because most steps check out, without flagging the one step built on a wrong mechanism.
+- Leaving a corrected root-cause finding only in the chat response — update memory/skill so the next session doesn't re-derive (or re-propose) the wrong theory.
